@@ -1,0 +1,6 @@
+mcp_configs:
+      rag_tools:
+        command: python
+        args:
+          - -m
+          - mcp_app_rag_server

@@ -1,0 +1,4 @@
+[deployment]
+  ANTHROPIC_API_KEY = "your-own-key"
+  MISTRAL_API_KEY="your-own-key"
+MCPRAGProjects
