@@ -6,6 +6,7 @@ from langchain.schema import HumanMessage, SystemMessage
 import streamlit as st
 import logging
 import asyncio
+from typing import List
 
 config = load_config()
 dep_config = config["deployment"]
@@ -33,26 +34,42 @@ def display_chat_history():
         count += 1
 
 
-async def provide_answer(links: list[str], question: str) -> str:
-    response = ""
+async def generate_response(links: List[str], question: str) -> str:
+    """
+    async function to generate responses given a list of links and a question.
+
+    Args:
+        links (List[str]): URLs to scrape content from and formulate the response.
+        question (str): The question to answer.
+
+    Returns:
+        str: AI-generated response based on provided links and question.
+    """
+
     try:
+        # Load MCP configurations
         mcp_configs = read_yaml_file("mcp_configs.yaml")['mcp_configs']
 
+        # Initialize tools and get cleanup function
         tools, cleanup = await convert_mcp_to_langchain_tools(
             mcp_configs,
             init_logger()
         )
+
+        # Initialize the LLM
         llm = init_chat_model(
             model="claude-3-5-sonnet-20241022",
             model_provider='anthropic',
-            api_key=dep_config["ANTHROPIC_API_KEY"],
+            api_key=load_config()["deployment"]["ANTHROPIC_API_KEY"],
             temperature=0,
             max_tokens=1000
         )
 
+        # Define the system prompt and messages
         system_prompt = f"""You are a helpful assistant! You will extract the content
         of websites given the following links: {links} then 
         respond to human questions as helpfully and accurately as possible using the extracted content"""
+
         messages = [
             SystemMessage(
                 content=system_prompt
@@ -61,22 +78,25 @@ async def provide_answer(links: list[str], question: str) -> str:
                 content=question
             )
         ]
+
+        # Create the agent with provided LLM and tools
         agent = create_react_agent(
             llm,
             tools
         )
 
+        # Invoke the agent with the messages
         result = await agent.ainvoke({'messages': messages})
 
-        result_messages = result['messages']
-        # the last message should be an AIMessage
-        response = result_messages[-1].content
+        # The last message's content is the AI response
+        response = result["messages"][-1].content
 
     except (FileNotFoundError, ValueError) as e:
         print(e)
     finally:
         if cleanup is not None:
             await cleanup()
+
     return response
 
 
@@ -90,7 +110,7 @@ if __name__ == '__main__':
         if links:
             question = st.chat_input(placeholder="Type your question")
             if question:
-                response = asyncio.run(provide_answer(links, question))
+                response = asyncio.run(generate_response(links, question))
                 if "chat_history" in st.session_state:
                     chat_history = st.session_state['chat_history']
                 chat_history.extend([question, response])
