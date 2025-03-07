@@ -84,7 +84,7 @@ if __name__ == '__main__':
     links = st.text_area(":blue[Add the sources(URL) for your Q&A session]", placeholder="Paste your links here")
     if st.button("Submit"):
         st.session_state['links'] = links
-        st.session_state['question'] = st.chat_input(placeholder="Type your question")
+        st.chat_input(placeholder="Type your question")
     elif "links" in st.session_state:
         links = st.session_state['links']
         if links:
