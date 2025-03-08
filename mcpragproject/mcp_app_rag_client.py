@@ -66,9 +66,8 @@ async def generate_response(links: List[str], question: str) -> str:
         )
 
         # Define the system prompt and messages
-        system_prompt = f"""You are a helpful assistant! You will extract the content
-        of websites given the following links: {links} then 
-        respond to human questions as helpfully and accurately as possible using the extracted content"""
+        system_prompt = f"""You are a helpful assistant! You will extract the content of websites using the provided links,
+        then respond to human questions as helpfully and accurately as possible using the extracted content"""
 
         messages = [
             SystemMessage(
