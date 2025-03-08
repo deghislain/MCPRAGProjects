@@ -19,7 +19,7 @@ def create_qa_context(links, question) -> dict:
 
 @mcp.prompt()
 def get_rag_system_prompt() -> str:
-    """ Returns the system prompt"""
+    """ Returns the system prompt """
     return get_system_prompt()
 
 
