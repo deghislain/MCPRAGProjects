@@ -3,10 +3,12 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_mistralai import MistralAIEmbeddings
 from utils import load_config
 from langchain.vectorstores import Chroma
+from typing import List
 from typing import Set
 import re
 
 from mcp.server.fastmcp import FastMCP
+
 
 config = load_config()
 dep_config = config["deployment"]
@@ -14,7 +16,7 @@ dep_config = config["deployment"]
 mcp = FastMCP("RagApp")
 
 
-def get_valid_urls(links: str) -> Set[str]:
+def get_valid_urls(links: List[str]) -> Set[str]:
     """
     Extract and validate URLs from a given string.
 
@@ -47,9 +49,9 @@ def get_valid_urls(links: str) -> Set[str]:
     return valid_urls
 
 
-def extract_page_content(urls):
+def extract_page_content(urls:  Set[str]):
     """
-        Extract content from web pages given a list of URLs.
+        Extract content from web pages given a set of URLs.
 
         Args:
             urls (List[str]): List of URLs to scrape the content from.
@@ -62,7 +64,7 @@ def extract_page_content(urls):
     return docs_list
 
 
-def store_page_content_in_vector_db(contents: str) -> Chroma:
+def store_page_content_in_vector_db(contents:  List[str]) -> Chroma:
     """
     Store page contents in a vector database using the Chroma library.
 
@@ -95,18 +97,16 @@ def store_page_content_in_vector_db(contents: str) -> Chroma:
 
 
 class RagTools:
-    @mcp.tool()
-    def create_qa_context(links, question) -> dict:
+    def get_retriever(links: List[str]):
         """
-            Creates the context for a question and answer session.
+            Creates a retriever using the content of website.
             Args:
-                 links: urls which content is necessary to create the context for a question and answer session
-                 question: the user question
+                 links: urls which content is necessary to create the retriever
 
             Returns:
-                Returns the answer to the user question
+                Returns a retriever
                   """
         urls = get_valid_urls(links)
         pages_content = extract_page_content(urls)
-        retriever = store_page_content_in_vector_db(pages_content).as_retriever()
-        return retriever.invoke(question)
+        return store_page_content_in_vector_db(pages_content).as_retriever()
+

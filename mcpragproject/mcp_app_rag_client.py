@@ -3,6 +3,7 @@ from langgraph.prebuilt import create_react_agent
 from utils import load_config, read_yaml_file
 from langchain.chat_models import init_chat_model
 from langchain.schema import HumanMessage, SystemMessage
+from mcp_app_rag_server import mcp
 import streamlit as st
 import logging
 import asyncio
@@ -66,12 +67,11 @@ async def generate_response(links: List[str], question: str) -> str:
         )
 
         # Define the system prompt and messages
-        system_prompt = """You are a helpful assistant! You will extract the content of websites using the provided links,
-        and tools "then respond to human questions as helpfully and accurately as possible using the extracted content"""
+        system_prompt = await mcp.get_prompt('get_rag_system_prompt')
 
         messages = [
             SystemMessage(
-                content=system_prompt
+                content=system_prompt.messages[0].content.text
             ),
             HumanMessage(
                 content=question
