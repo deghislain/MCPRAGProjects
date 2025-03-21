@@ -1,10 +1,11 @@
 from mcp_app_rag_tools import mcp
 from mcp_app_rag_tools import RagTools as tools
 from mcpragproject.mcp_app_rag_prompt import get_system_prompt
-
-
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 @mcp.tool()
 def create_qa_context(links, question) -> dict:
+    logging.info(f"create_qa_context START: input= {links} ")
     """
         Creates the context for a question and answer session.
         Args:

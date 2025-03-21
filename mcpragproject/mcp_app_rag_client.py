@@ -12,7 +12,7 @@ from typing import List
 config = load_config()
 dep_config = config["deployment"]
 chat_history = []
-
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def init_logger() -> logging.Logger:
     logging.basicConfig(
@@ -36,6 +36,7 @@ def display_chat_history():
 
 
 async def generate_response(links: List[str], question: str) -> str:
+
     """
     async function to generate responses given a list of links and a question.
 
@@ -68,10 +69,12 @@ async def generate_response(links: List[str], question: str) -> str:
 
         # Define the system prompt and messages
         system_prompt = await mcp.get_prompt('get_rag_system_prompt')
+        complete_system_prompt = system_prompt.messages[0].content.text + links
+        logging.info(f"********************************complete_system_prompt = {complete_system_prompt}")
 
         messages = [
             SystemMessage(
-                content=system_prompt.messages[0].content.text
+                content=complete_system_prompt
             ),
             HumanMessage(
                 content=question
