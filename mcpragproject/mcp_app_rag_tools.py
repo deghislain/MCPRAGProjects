@@ -1,7 +1,7 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_mistralai import MistralAIEmbeddings
-from utils import load_config
+from mcpragproject.utils import load_config
 from langchain.vectorstores import Chroma
 from typing import List
 from typing import Set
@@ -16,7 +16,7 @@ dep_config = config["deployment"]
 mcp = FastMCP("RagApp")
 
 
-def get_valid_urls(links: List[str]) -> Set[str]:
+def get_valid_urls(links: str) -> Set[str]:
     """
     Extract and validate URLs from a given string.
 
