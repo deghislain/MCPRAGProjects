@@ -1,5 +1,7 @@
+from unittest.mock import patch, MagicMock
 import unittest
-from mcpragproject.mcp_app_rag_tools import get_valid_urls
+from mcpragproject.mcp_app_rag_tools import get_valid_urls, extract_page_content
+from langchain_community.document_loaders import WebBaseLoader
 import re
 
 
@@ -36,6 +38,28 @@ class TestGetValidURLs(unittest.TestCase):
         string_urls = """["http://", "https://", "ftp://", "file:///path/to/file"]"""
 
         self.assertEqual(get_valid_urls(string_urls), set())
+
+
+def test_extract_page_content(self):
+    self.urls = {
+        "http://example.com/page1",
+        "https://example.org/page2",
+        "ftp://ftp.example.net/page3"
+    }
+    self.web_base_loader = MagicMock(spec=WebBaseLoader)
+
+    for i, url in enumerate(self.urls):
+        self.web_base_loader.load.side_effect = lambda: f"<p>Content from {url}</p>"
+
+    with patch('TestExtractPageContent.WebBaseLoader', return_value=self.web_base_loader).start():
+        extracted_content = extract_page_content(self.urls)
+
+    expected_output = [
+        "<p>Content from http://example.com/page1</p>",
+        "<p>Content from https://example.org/page2</p>",
+        "<p>Content from ftp://ftp.example.net/page3</p>"
+    ]
+    self.assertEqual(extracted_content, expected_output)
 
 
 if __name__ == '__main__':
