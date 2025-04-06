@@ -1,10 +1,9 @@
 from unittest.mock import patch, MagicMock
 import unittest
 from langchain_core.documents import Document
-from mcpragproject.mcp_app_rag_tools import get_valid_urls, extract_page_content, store_page_content_in_vector_db
+from mcpragproject.mcp_app_rag_tools import get_valid_urls, extract_page_content
 from mcpragproject.mcp_app_rag_tools import RagTools as tools
 from langchain_community.document_loaders import WebBaseLoader
-from collections import Counter
 import re
 
 
