@@ -1,10 +1,11 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 from langchain.vectorstores import Chroma
 import unittest
 
 from langchain_core.documents import Document
 
 from mcpragproject.mcp_app_rag_tools import get_valid_urls, extract_page_content, store_page_content_in_vector_db
+from mcpragproject.mcp_app_rag_tools import RagTools as tools
 from langchain_community.document_loaders import WebBaseLoader
 import re
 
@@ -69,42 +70,79 @@ class TestRagTools(unittest.TestCase):
         ]
         self.assertEqual(extracted_content, expected_output)
 
-        @patch('text_splitter.RecursiveCharacterTextSplitter')
-        def test_split_documents(self, mock_text_splitter):
-            content = "This is a sample text for testing."
 
-            # Mock the .split_documents method to return predefined chunks
-            mock_text_splitter.return_value.split_documents.side_effect = [
-                ["chunk1", "chunk2"],  # First chunk
-                ["chunk3", "chunk4"]  # Second chunk
-            ]
 
-            result = store_page_content_in_vector_db([content])
+    @patch('mcpragproject.mcp_app_rag_tools.get_valid_urls')
+    @patch('mcpragproject.mcp_app_rag_tools.extract_page_content')
+    @patch('mcpragproject.mcp_app_rag_tools.store_page_content_in_vector_db')
+    def test_get_retriever_valid_input(self, mock_store_page_content, mock_extract_page_content,
+                                       mock_get_valid_urls):
+        # Arrange
+        links = ["http://example.com/page1",
+            "https://example.org/page2"]
+        mock_get_valid_urls.return_value = links
+        mock_extract_page_content.return_value = ['content1', 'content2']
+        mock_retriever = MagicMock()
+        mock_store_page_content.return_value.as_retriever.return_value = mock_retriever
 
-            self.assertEqual(result, None)  # Expected to return None since no further steps are performed
+        # Act
+        retriever = tools.get_retriever(links)
 
-        @patch('langchain_mistralai.MistralAIEmbeddings')
-        def test_create_chroma_instance(self, mock_embeddings):
-            # Mock the .from_documents method with a predefined Chroma instance
-            mock_embeddings.return_value.from_documents.return_value = MagicMock(
-                documents=[["document1", "document2"]],
-                embedding=MagicMock(),
-            )
+        # Assert
+        self.assertEqual(retriever, mock_retriever)
+        mock_get_valid_urls.assert_called_once_with(links)
+        mock_extract_page_content.assert_called_once_with(links)
+        mock_store_page_content.assert_called_once_with(['content1', 'content2'])
 
-            result = store_page_content_in_vector_db([""])  # An empty string to simulate content
 
-            self.assertEqual(result, None)  # Expected to return None since no further assertions are made
+    @patch('mcpragproject.mcp_app_rag_tools.get_valid_urls')
+    def test_get_retriever_empty_links(self, mock_get_valid_urls):
+        # Arrange
+        links = []
+        mock_get_valid_urls.return_value = links
 
-        def test_store_page_content_in_vector_db(self):
-            # Mock all the dependencies without making them return anything
-            mock_text_splitter = MagicMock()
-            mock_embeddings = MagicMock()
+        # Act and Assert
+        with self.assertRaises(ValueError):
+            tools.get_retriever(links)
 
-            result = store_page_content_in_vector_db(["sample text for testing"])
+    @patch('mcpragproject.mcp_app_rag_tools.get_valid_urls')
+    def test_get_retriever_none_links(self, mock_get_valid_urls):
+        # Arrange
+        links = None
+        mock_get_valid_urls.return_value = links
 
-            self.assertIsInstance(result, Chroma)  # Ensure it returns a valid instance of Chroma
-            self.assertEqual(mock_text_splitter.split_documents.call_count,1)  # Verify that split_documents is called once
-            self.assertTrue(mock_embeddings.from_documents.called)  # Confirm the embeddings method was indeed called
+        # Act and Assert
+        with self.assertRaises(TypeError) as ex:
+            tools.get_retriever(links)
+            self.assertEqual(str(ex.exception), "Invalid input: links cannot be None.")
+
+    @patch('mcpragproject.mcp_app_rag_tools.get_valid_urls')
+    @patch('mcpragproject.mcp_app_rag_tools.extract_page_content')
+    def test_get_retriever_extract_content_fails(self, mock_extract_page_content, mock_get_valid_urls):
+        # Arrange
+        links = ['http://example.com', 'http://example.org']
+        mock_get_valid_urls.return_value = links
+        mock_extract_page_content.side_effect = Exception('Mocked exception')
+
+        # Act and Assert
+        with self.assertRaises(Exception):
+            tools.get_retriever(links)
+
+    @patch('mcpragproject.mcp_app_rag_tools.get_valid_urls')
+    @patch('mcpragproject.mcp_app_rag_tools.extract_page_content')
+    @patch('mcpragproject.mcp_app_rag_tools.store_page_content_in_vector_db')
+    def test_get_retriever_store_content_fails(self, mock_store_page_content, mock_extract_page_content,
+                                               mock_get_valid_urls):
+        # Arrange
+        links = ['"http://example.com/page1","https://example.org/page2"']
+        mock_get_valid_urls.return_value = links
+        mock_extract_page_content.return_value = ['content1', 'content2']
+        mock_store_page_content.side_effect = Exception('Mocked exception')
+
+        # Act and Assert
+        with self.assertRaises(Exception):
+            tools.get_retriever(links)
+
 
 
 if __name__ == '__main__':

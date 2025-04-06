@@ -9,7 +9,6 @@ import re
 
 from mcp.server.fastmcp import FastMCP
 
-
 config = load_config()
 dep_config = config["deployment"]
 
@@ -26,7 +25,8 @@ def get_valid_urls(links: str) -> Set[str]:
     Returns:
         Set[str]: A set of valid URLs found in the input string.
     """
-
+    if links is None:
+        raise TypeError("Invalid input: links cannot be None.")
     # Regular expression to match URLs
     url_regex = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*$$,]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
@@ -49,7 +49,7 @@ def get_valid_urls(links: str) -> Set[str]:
     return valid_urls
 
 
-def extract_page_content(urls:  Set[str]):
+def extract_page_content(urls: Set[str]):
     """
         Extract content from web pages given a set of URLs.
 
@@ -59,12 +59,17 @@ def extract_page_content(urls:  Set[str]):
         Returns:
             List[str]: A list containing the combined content from all web pages.
         """
-    docs = [WebBaseLoader(url).load() for url in urls]
-    docs_list = [item for sublist in docs for item in sublist]
+    docs_list = None
+    try:
+        docs = [WebBaseLoader(url).load() for url in urls]
+        docs_list = [item for sublist in docs for item in sublist]
+    except Exception as ex:
+        print("Error while extracting the document", ex)
+
     return docs_list
 
 
-def store_page_content_in_vector_db(contents:  List[str]) -> Chroma:
+def store_page_content_in_vector_db(contents: List[str]) -> Chroma:
     """
     Store page contents in a vector database using the Chroma library.
 
@@ -109,4 +114,3 @@ class RagTools:
         urls = get_valid_urls(links)
         pages_content = extract_page_content(urls)
         return store_page_content_in_vector_db(pages_content).as_retriever()
-
