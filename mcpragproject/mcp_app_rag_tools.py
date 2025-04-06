@@ -9,6 +9,10 @@ import re
 
 from mcp.server.fastmcp import FastMCP
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 config = load_config()
 dep_config = config["deployment"]
 
@@ -16,6 +20,7 @@ mcp = FastMCP("RagApp")
 
 
 def get_valid_urls(links: str) -> Set[str]:
+    logging.info(f"******************************get_valid_urls START with input: {links}")
     """
     Extract and validate URLs from a given string.
 
@@ -45,11 +50,12 @@ def get_valid_urls(links: str) -> Set[str]:
         except Exception as ex:
             # Log the exception and continue processing other URLs
             print(f"Error while processing URL: {ex}")
-
+    logging.info(f"******************************get_valid_urls END with output: {valid_urls}")
     return valid_urls
 
 
 def extract_page_content(urls: Set[str]):
+    logging.info(f"******************************extract_page_content START with input: {urls}")
     """
         Extract content from web pages given a set of URLs.
 
@@ -65,11 +71,12 @@ def extract_page_content(urls: Set[str]):
         docs_list = [item for sublist in docs for item in sublist]
     except Exception as ex:
         print("Error while extracting the document", ex)
-
+    logging.info(f"******************************extract_page_content END with output: {docs_list}")
     return docs_list
 
 
 def store_page_content_in_vector_db(contents: List[str]) -> Chroma:
+    logging.info("******************************store_page_content_in_vector_db START")
     """
     Store page contents in a vector database using the Chroma library.
 
@@ -92,7 +99,7 @@ def store_page_content_in_vector_db(contents: List[str]) -> Chroma:
         model="mistral-embed",
         api_key=dep_config["MISTRAL_API_KEY"]
     )
-
+    logging.info("******************************store_page_content_in_vector_db END")
     # Create Chroma instance to store documents and compute embeddings
     return Chroma.from_documents(
         documents=content_splits,
@@ -103,6 +110,7 @@ def store_page_content_in_vector_db(contents: List[str]) -> Chroma:
 
 class RagTools:
     def get_retriever(links: List[str]):
+        logging.info(f"******************************get_retriever START with input: {links}")
         """
             Creates a retriever using the content of website.
             Args:
@@ -113,4 +121,5 @@ class RagTools:
                   """
         urls = get_valid_urls(links)
         pages_content = extract_page_content(urls)
+        logging.info(f"******************************get_retriever END")
         return store_page_content_in_vector_db(pages_content).as_retriever()
